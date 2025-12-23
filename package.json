@@ -1,0 +1,58 @@
+{
+  "name": "ai-review-queue-vscode",
+  "displayName": "AI Review Queue",
+  "description": "Add review notes to code lines, queue them, and send batched reviews to Claude",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "aiReviewQueue.addNote",
+        "title": "AI Review Queue: Add Note"
+      },
+      {
+        "command": "aiReviewQueue.openNotes",
+        "title": "AI Review Queue: Open Notes"
+      },
+      {
+        "command": "aiReviewQueue.sendToClaude",
+        "title": "AI Review Queue: Send to Claude"
+      },
+      {
+        "command": "aiReviewQueue.clearNotes",
+        "title": "AI Review Queue: Clear All Notes"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "aiReviewQueue.addNote",
+        "key": "ctrl+alt+n",
+        "when": "editorTextFocus"
+      },
+      {
+        "command": "aiReviewQueue.sendToClaude",
+        "key": "ctrl+alt+c"
+      }
+    ]
+  },
+  "scripts": {
+    "compile": "tsc -p tsconfig.build.json",
+    "watch": "tsc -watch -p tsconfig.build.json",
+    "lint": "eslint src --ext ts",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "@types/vscode": "^1.85.0",
+    "typescript": "^5.3.0",
+    "vitest": "^2.1.0"
+  }
+}
