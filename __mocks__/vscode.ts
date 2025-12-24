@@ -57,3 +57,7 @@ export class Range {
         public endChar: number
     ) {}
 }
+
+export class MarkdownString {
+    constructor(public value: string = '') {}
+}

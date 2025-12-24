@@ -36,11 +36,12 @@ function updateDecorations(editor: vscode.TextEditor, notesContent: string): voi
     const fileNotes = getNotesForFile(notes, relativePath);
 
     const decorations: vscode.DecorationOptions[] = [];
-    for (const [lineNumber] of fileNotes) {
+    for (const [lineNumber, note] of fileNotes) {
         const line = lineNumber - 1;
         if (line >= 0 && line < editor.document.lineCount) {
             decorations.push({
-                range: new vscode.Range(line, 0, line, 0),
+                range: new vscode.Range(line, 0, line, Number.MAX_SAFE_INTEGER),
+                hoverMessage: new vscode.MarkdownString(`**Review Note**\n\n${note.note}`),
             });
         }
     }

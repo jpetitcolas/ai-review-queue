@@ -5,8 +5,14 @@ A VSCode extension for collecting review notes on code lines and sending them to
 ## Features
 
 - **Add notes to code lines** - Press `Ctrl+Alt+N` on any line to add a review note
+- **Gutter icons** - Lines with notes display an orange icon in the gutter
+- **Hover preview** - Hover over a line to see its review note
 - **Queue notes** - Notes are stored in a markdown file for later review
 - **Send to Claude** - Press `Ctrl+Alt+C` to send all queued notes to Claude (coming soon)
+
+## Known Limitations
+
+- **Hover on empty lines** - The hover preview only works on lines with content. Empty lines show the gutter icon but hovering has no effect. This is a [VSCode API limitation](https://github.com/microsoft/vscode/issues/224134) - extensions cannot show hover on gutter icons directly.
 
 ## Installation
 

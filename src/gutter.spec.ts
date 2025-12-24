@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { ExtensionContext, TextEditor, WorkspaceFolder } from 'vscode';
-import { workspace, window, Uri, Range } from 'vscode';
+import { workspace, window, Uri, Range, MarkdownString } from 'vscode';
 import { createDecorationType, refreshDecorations } from './gutter';
 
 const createMockContext = () =>
@@ -83,10 +83,24 @@ describe('gutter', () => {
 
             await refreshDecorations();
 
-            expect(mockEditor.setDecorations).toHaveBeenCalledWith(
-                mockDecorationType,
-                [{ range: expect.any(Range) }]
+            const [[, decorations]] = vi.mocked(mockEditor.setDecorations).mock.calls;
+            const typedDecorations = decorations as unknown as { range: Range }[];
+            expect(typedDecorations[0].range).toEqual(new Range(9, 0, 9, Number.MAX_SAFE_INTEGER));
+        });
+
+        it('shows note content in hover message', async () => {
+            setWorkspaceFolders([{ name: 'my-project', fsPath: '/workspace' }]);
+            const mockEditor = createMockEditor('/workspace/src/file.ts');
+            setVisibleEditors([mockEditor]);
+            vi.mocked(workspace.fs.readFile).mockResolvedValue(
+                Buffer.from('## src/file.ts:10\n> const x = 1;\n\nThis is my review note\n\n---\n\n')
             );
+
+            await refreshDecorations();
+
+            const [[, decorations]] = vi.mocked(mockEditor.setDecorations).mock.calls;
+            const typedDecorations = decorations as unknown as { hoverMessage: MarkdownString }[];
+            expect(typedDecorations[0].hoverMessage.value).toBe('**Review Note**\n\nThis is my review note');
         });
 
         it('applies decorations for multiple notes in same file', async () => {
@@ -104,7 +118,10 @@ describe('gutter', () => {
 
             expect(mockEditor.setDecorations).toHaveBeenCalledWith(
                 mockDecorationType,
-                [{ range: expect.any(Range) }, { range: expect.any(Range) }]
+                [
+                    { range: expect.any(Range), hoverMessage: expect.any(MarkdownString) },
+                    { range: expect.any(Range), hoverMessage: expect.any(MarkdownString) },
+                ]
             );
         });
 
