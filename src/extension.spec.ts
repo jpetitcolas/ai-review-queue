@@ -2,9 +2,15 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { ExtensionContext, TextEditor, WorkspaceFolder } from 'vscode';
 import { workspace, window, commands } from 'vscode';
 import { activate } from './extension';
+import { createDecorationType, refreshDecorations } from './gutter';
+
+vi.mock('./gutter', () => ({
+    createDecorationType: vi.fn(() => ({ dispose: vi.fn() })),
+    refreshDecorations: vi.fn(),
+}));
 
 const createMockContext = () =>
-    ({ subscriptions: [] }) as unknown as ExtensionContext;
+    ({ subscriptions: [], extensionPath: '/mock/extension' }) as unknown as ExtensionContext;
 
 const createMockEditor = (
     filePath: string,
@@ -25,6 +31,15 @@ const setWorkspaceFolders = (folders: { name: string; fsPath: string }[] | undef
 };
 
 describe('extension', () => {
+    beforeEach(() => {
+        vi.mocked(workspace.createFileSystemWatcher).mockReturnValue({
+            onDidChange: vi.fn(() => ({ dispose: vi.fn() })),
+            onDidCreate: vi.fn(() => ({ dispose: vi.fn() })),
+            onDidDelete: vi.fn(() => ({ dispose: vi.fn() })),
+            dispose: vi.fn(),
+        } as never);
+    });
+
     describe('activate', () => {
         it('should register addNote command', () => {
             activate(createMockContext());
@@ -43,6 +58,49 @@ describe('extension', () => {
             activate(context);
 
             expect(context.subscriptions).toContain(mockDisposable);
+        });
+
+        it('should create decoration type and add to subscriptions', () => {
+            const mockDecorationType = { dispose: vi.fn() };
+            vi.mocked(createDecorationType).mockReturnValue(mockDecorationType as never);
+            const context = createMockContext();
+
+            activate(context);
+
+            expect(createDecorationType).toHaveBeenCalledWith(context);
+            expect(context.subscriptions).toContain(mockDecorationType);
+        });
+
+        it('should register editor change listener', () => {
+            const context = createMockContext();
+
+            activate(context);
+
+            expect(window.onDidChangeActiveTextEditor).toHaveBeenCalledWith(expect.any(Function));
+        });
+
+        it('should create file watcher when workspace folder exists', () => {
+            setWorkspaceFolders([{ name: 'my-project', fsPath: '/workspace' }]);
+
+            activate(createMockContext());
+
+            expect(workspace.createFileSystemWatcher).toHaveBeenCalledWith(
+                expect.stringContaining('my-project/review-notes.md')
+            );
+        });
+
+        it('should not create file watcher when no workspace folder', () => {
+            setWorkspaceFolders(undefined);
+
+            activate(createMockContext());
+
+            expect(workspace.createFileSystemWatcher).not.toHaveBeenCalled();
+        });
+
+        it('should call refreshDecorations on activation', () => {
+            activate(createMockContext());
+
+            expect(refreshDecorations).toHaveBeenCalled();
         });
     });
 

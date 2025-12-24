@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 import { getNotesFilePath, formatNoteEntry } from './notes';
+import { createDecorationType, refreshDecorations } from './gutter';
 
 async function ensureNotesFileExists(notesPath: string): Promise<void> {
     const uri = vscode.Uri.file(notesPath);
@@ -66,8 +67,33 @@ async function addNote(): Promise<void> {
 }
 
 export function activate(context: vscode.ExtensionContext) {
-    const addNoteCommand = vscode.commands.registerCommand('aiReviewQueue.addNote', addNote);
+    const decorationType = createDecorationType(context);
+    context.subscriptions.push(decorationType);
+
+    const addNoteCommand = vscode.commands.registerCommand('aiReviewQueue.addNote', async () => {
+        await addNote();
+        await refreshDecorations();
+    });
     context.subscriptions.push(addNoteCommand);
+
+    // Refresh decorations when editor changes
+    context.subscriptions.push(
+        vscode.window.onDidChangeActiveTextEditor(() => refreshDecorations())
+    );
+
+    // Watch for notes file changes
+    const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+    const notesPath = getNotesFilePath(workspaceFolder?.name);
+    if (notesPath) {
+        const watcher = vscode.workspace.createFileSystemWatcher(notesPath);
+        watcher.onDidChange(() => refreshDecorations());
+        watcher.onDidCreate(() => refreshDecorations());
+        watcher.onDidDelete(() => refreshDecorations());
+        context.subscriptions.push(watcher);
+    }
+
+    // Initial decoration refresh
+    refreshDecorations();
 }
 
 export function deactivate() {}
